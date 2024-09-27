@@ -11,7 +11,7 @@ const colors = ['#FF0000', '#FFA500', '#FFFF00', '#00FF00', '#00FFFF', '#0000FF'
 const notes = ['C', 'D', 'E', 'F', 'G', 'A', 'B']; // C corresponds to ド, D to レ, etc.
 let selectedColor = colors[0];
 let isEraserActive = false; // Flag to track eraser mode
-const grid = Array(4).fill().map(() => Array(16).fill(null));
+const grid = Array(3).fill().map(() => Array(16).fill(null)); // Three rows grid with 16 columns each
 
 // Create the color palette buttons.
 colors.forEach((color) => {
@@ -25,44 +25,50 @@ colors.forEach((color) => {
     colorPalette.appendChild(button);
 });
 
-// Draw the staff lines with increased spacing.
+// Draw the staff lines with increased spacing and multiple staves.
 function drawStaff() {
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 1;
-    const staffSpacing = 20; // Increase this value to expand the staff height
-    for (let i = 0; i < 5; i++) {
-        ctx.beginPath();
-        ctx.moveTo(0, 40 + i * staffSpacing); // Adjust staff line spacing
-        ctx.lineTo(canvas.width, 40 + i * staffSpacing);
-        ctx.stroke();
+    const staffSpacing = 20; // Vertical spacing between lines within a single staff
+    const staffSetSpacing = 120; // Vertical spacing between each set of staves
+
+    // Draw three sets of staves
+    for (let set = 0; set < 3; set++) {
+        const offset = set * staffSetSpacing; // Vertical offset for each set of staves
+        for (let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.moveTo(0, 40 + offset + i * staffSpacing);
+            ctx.lineTo(canvas.width, 40 + offset + i * staffSpacing);
+            ctx.stroke();
+        }
     }
 }
 
-// Draw the color grid only within the staff area with adjusted cell height.
+// Draw the color grid within the corresponding staff areas.
 function drawGrid() {
     const cellWidth = canvas.width / 16;
-    const cellHeight = 20; // Adjusted to fit the new staff line spacing
-    const staffTop = 40; // Starting Y position of the first staff line
+    const cellHeight = 80; // Each cell spans the height between the first and last staff line in a set
+    const staffTopOffsets = [40, 160, 280]; // Starting Y positions for each set of staves
 
     grid.forEach((row, y) => {
         row.forEach((cell, x) => {
-            // Only draw cells within the staff lines range
-            if (cell && y >= 0 && y < 5) {
+            if (cell) {
                 ctx.fillStyle = cell;
-                ctx.fillRect(x * cellWidth, staffTop + y * cellHeight, cellWidth, cellHeight);
+                ctx.fillRect(x * cellWidth, staffTopOffsets[y], cellWidth, cellHeight);
             }
         });
     });
 }
 
-// Handle canvas clicks to fill grid with the selected color or erase.
+// Handle canvas clicks to fill the tall grid cells with the selected color or erase.
 canvas.addEventListener('click', (event) => {
     const rect = canvas.getBoundingClientRect();
     const x = Math.floor((event.clientX - rect.left) / (canvas.width / 16));
-    const y = Math.floor((event.clientY - rect.top - 40) / 20); // Adjust click detection to match the new staff spacing
-    if (y >= 0 && y < 4) { // Ensure the click is within the grid range
+    const y = Math.floor((event.clientY - rect.top - 40) / 120); // Adjust click detection to match the staff set height
+
+    if (y >= 0 && y < 3) { // Ensure the click is within the grid range of the three rows
         if (isEraserActive) {
             grid[y][x] = null; // Clear the cell if eraser is active
         } else {
@@ -114,6 +120,7 @@ playButton.addEventListener('click', playNotes);
 clearButton.addEventListener('click', () => {
     grid.forEach(row => row.fill(null));
     drawStaff();
+    drawGrid();
 });
 eraserButton.addEventListener('click', () => {
     isEraserActive = true; // Activate eraser mode
@@ -127,3 +134,4 @@ saveButton.addEventListener('click', () => {
 
 // Initial drawing of the staff.
 drawStaff();
+drawGrid();
