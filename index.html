@@ -10,13 +10,13 @@
 <body>
     <div class="container">
         <h1>音楽的カラーグリッド</h1>
-        <div id="colorPalette"></div>
-        <canvas id="canvas" width="800" height="500"></canvas>
-        <div id="controls">
-            <button id="playButton">再生</button>
-            <button id="clearButton">クリア</button>
-            <button id="eraserButton" class="eraser-button">消しゴム</button>
-            <button id="saveButton">保存</button>
+        <p>クリックして色を選び、グリッド上で音を作成します。上段はピアノ、中段はベース、下段はドラムです。</p>
+        <div id="colorPalette" aria-label="色のパレット"></div>
+        <canvas id="canvas" width="1000" height="500" aria-label="音楽グリッドキャンバス"></canvas>
+        <div id="controls" aria-label="操作ボタン">
+            <button id="clearButton" aria-label="クリアボタン">クリア</button>
+            <button id="eraserButton" class="eraser-button" aria-label="消しゴムボタン">消しゴム</button>
+            <button id="saveButton" aria-label="保存ボタン">保存</button>
         </div>
     </div>
     <script src="script.js"></script>
