@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>カラーグリッド音楽ジェネレーター</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>カラーグリッド音楽ジェネレーター</h1>
+    <canvas id="gridCanvas" width="1000" height="800"></canvas>
+
+    <div id="controls">
+        <div id="palette"></div>
+        <button id="eraserButton">消しゴム</button>
+        <button id="clearButton">クリア</button>
+        <button id="saveButton">保存</button>
+        <button id="playButton">再生 / 停止</button>
+    </div>
+
+    <!-- Tone.jsのCDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.39/Tone.js"></script>
+    <!-- スクリプトファイル -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
