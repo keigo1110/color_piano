@@ -7,10 +7,13 @@
 </head>
 <body>
     <h1>カラーグリッド音楽ジェネレーター</h1>
-    <canvas id="gridCanvas" width="1000" height="800"></canvas>
+    <canvas id="gridCanvas" width="1000" height="240"></canvas>
 
     <div id="controls">
-        <div id="palette"></div>
+        <div id="paletteContainer">
+            <div id="mainPalette"></div>
+            <div id="drumPalette"></div>
+        </div>
         <button id="eraserButton">消しゴム</button>
         <button id="clearButton">クリア</button>
         <button id="saveButton">保存</button>

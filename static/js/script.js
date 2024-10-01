@@ -13,44 +13,71 @@ let grid = Array(rows).fill().map(() => Array(cols).fill(null));
 
 // カラーパレットと音のリスト
 const colorNoteMap = {
-    "Red": "C4",
-    "Orange-pink": "G4",
-    "Yellow": "D4",
-    "Green": "A4",
-    "Whitish-blue": "E4",
-    "Blue, bright": "F#4",
-    "Violet": "Db4",
-    "Purplish-violet": "Ab4",
-    "Steel color with metallic sheen": "Eb4",
-    "Red, dark": "F4"
+    "Red": { note: "C4", color: "red" },
+    "Orange-pink": { note: "G4", color: "#FF9966" },
+    "Yellow": { note: "D4", color: "yellow" },
+    "Green": { note: "A4", color: "green" },
+    "Whitish-blue": { note: "E4", color: "#E0FFFF" }, // Light Cyan
+    "Blue, bright": { note: "F#4", color: "blue" },
+    "Violet": { note: "Db4", color: "violet" },
+    "Purplish-violet": { note: "Ab4", color: "indigo" },
+    "Steel color with metallic sheen": { note: "Eb4", color: "#4682B4" }, // Steel Blue
+    "Red, dark": { note: "F4", color: "darkred" }
 };
 
-const colors = Object.keys(colorNoteMap);
-let selectedColor = colors[0]; // デフォルトの選択色
+const drumColorMap = {
+    "White": { sample: "hat", color: "white" },
+    "Black": { sample: "kick", color: "black" }
+};
+
+const mainColors = Object.keys(colorNoteMap);
+const drumColors = Object.keys(drumColorMap);
+
+let selectedColor = null; // 選択された色（キー）
+let selectedPalette = null; // 選択されたパレット（"main" または "drum"）
 let eraserMode = false; // 消しゴムモード
 
 // コントロール要素
-const paletteDiv = document.getElementById('palette');
+const mainPaletteDiv = document.getElementById('mainPalette');
+const drumPaletteDiv = document.getElementById('drumPalette');
 const eraserButton = document.getElementById('eraserButton');
 const clearButton = document.getElementById('clearButton');
 const saveButton = document.getElementById('saveButton');
 const playButton = document.getElementById('playButton');
 
-// カラーパレットの生成
-colors.forEach(color => {
+// メインパレットの生成
+mainColors.forEach(key => {
+    const colorInfo = colorNoteMap[key];
     const colorBtn = document.createElement('button');
     colorBtn.className = 'color-button';
-    colorBtn.style.backgroundColor = color;
+    colorBtn.style.backgroundColor = colorInfo.color;
     colorBtn.addEventListener('click', () => {
-        selectedColor = color;
+        selectedColor = key;
+        selectedPalette = "main";
         eraserMode = false;
     });
-    paletteDiv.appendChild(colorBtn);
+    mainPaletteDiv.appendChild(colorBtn);
+});
+
+// ドラムパレットの生成
+drumColors.forEach(key => {
+    const colorInfo = drumColorMap[key];
+    const colorBtn = document.createElement('button');
+    colorBtn.className = 'drum-button';
+    colorBtn.style.backgroundColor = colorInfo.color;
+    colorBtn.addEventListener('click', () => {
+        selectedColor = key;
+        selectedPalette = "drum";
+        eraserMode = false;
+    });
+    drumPaletteDiv.appendChild(colorBtn);
 });
 
 // コントロールボタンのイベント
 eraserButton.addEventListener('click', () => {
     eraserMode = true;
+    selectedColor = null;
+    selectedPalette = null;
 });
 
 clearButton.addEventListener('click', () => {
@@ -86,7 +113,14 @@ canvas.addEventListener('click', (e) => {
     if (eraserMode) {
         grid[y][x] = null;
     } else {
-        grid[y][x] = selectedColor;
+        if (y < 2 && selectedPalette === "main") {
+            // 最初の2行はメインパレットのみ
+            grid[y][x] = { key: selectedColor, palette: selectedPalette };
+        } else if (y === 2 && selectedPalette === "drum") {
+            // 第3行はドラムパレットのみ
+            grid[y][x] = { key: selectedColor, palette: selectedPalette };
+        }
+        // 適切なパレットが選択されていない場合は何もしない
     }
     drawGrid();
 });
@@ -98,8 +132,14 @@ function drawGrid() {
     // セルの描画
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-            const color = grid[y][x];
-            if (color) {
+            const cell = grid[y][x];
+            if (cell) {
+                let color;
+                if (cell.palette === "main") {
+                    color = colorNoteMap[cell.key].color;
+                } else if (cell.palette === "drum") {
+                    color = drumColorMap[cell.key].color;
+                }
                 ctx.fillStyle = color;
                 ctx.fillRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
             }
@@ -115,7 +155,7 @@ function drawGrid() {
 // 五線譜の描画
 function drawStaves() {
     ctx.strokeStyle = '#000';
-    for (let y = 0; y < rows; y++) {
+    for (let y = 0; y < 2; y++) { // 最初の2行のみ
         const startY = y * cellHeight;
         const lineSpacing = cellHeight / 6;
         for (let i = 1; i <= 5; i++) {
@@ -141,9 +181,9 @@ function startPlayback() {
 
         // 音の再生
         for (let y = 0; y < rows; y++) {
-            const color = grid[y][currentColumn];
-            if (color) {
-                playSound(y, color);
+            const cell = grid[y][currentColumn];
+            if (cell) {
+                playSound(y, cell.key, cell.palette);
             }
         }
 
@@ -158,27 +198,23 @@ function stopPlayback() {
 }
 
 // 音の再生
-function playSound(row, color) {
-    if (row === 0) {
-        // ピアノシンセ
-        const synth = new Tone.Synth().toDestination();
-        synth.triggerAttackRelease(colorNoteMap[color], '8n');
-    } else if (row === 1) {
-        // ベースシンセ
-        const bassSynth = new Tone.MembraneSynth().toDestination();
-        bassSynth.triggerAttackRelease(colorNoteMap[color], '8n');
-    } else if (row === 2) {
-        // ドラムサンプル
-        const player = new Tone.Player().toDestination();
-        if (color === 'Whitish-blue') {
-            player.load('/static/audio/hat.wav').then(() => {
-                player.start();
-            });
-        } else {
-            player.load('/static/audio/kick.wav').then(() => {
-                player.start();
-            });
+function playSound(row, key, palette) {
+    if (palette === "main") {
+        const note = colorNoteMap[key].note;
+        if (row === 0) {
+            // ピアノシンセ
+            const synth = new Tone.Synth().toDestination();
+            synth.triggerAttackRelease(note, '8n');
+        } else if (row === 1) {
+            // ベースシンセ
+            const bassSynth = new Tone.MembraneSynth().toDestination();
+            bassSynth.triggerAttackRelease(note, '8n');
         }
+    } else if (palette === "drum" && row === 2) {
+        // ドラムサンプル
+        const sampleName = drumColorMap[key].sample;
+        const player = new Tone.Player(`/static/audio/${sampleName}.wav`).toDestination();
+        player.autostart = true;
     }
 }
 

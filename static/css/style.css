@@ -36,3 +36,35 @@ h1 {
     padding: 10px 20px;
     cursor: pointer;
 }
+
+/* 省略可能な既存のスタイル */
+
+#paletteContainer {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+#mainPalette, #drumPalette {
+    display: flex;
+    margin: 0 10px;
+}
+
+.color-button {
+    width: 30px;
+    height: 30px;
+    margin: 0 5px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+}
+
+.drum-button {
+    width: 30px;
+    height: 30px;
+    margin: 0 5px;
+    cursor: pointer;
+    border: none;
+    border-radius: 50%;
+    border: 1px solid #000;
+}
