@@ -1,4 +1,4 @@
-#color_piano(pythonバージョン)
+# color_piano(pythonバージョン)
 ### Flaskアプリケーションの起動
 - pythonプログラムファイルまで移動
   ```
