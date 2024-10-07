@@ -1,13 +1,12 @@
-# キーボードの音をGUI操作で鳴らすが最初の一音目しか鳴らないバグがある
+'''GUIでピアノを操作する完成版'''
 import pygame
-import pygame.midi
+import mido
 import time
 
 # MIDIの初期化
 def init_midi():
-    pygame.midi.init()
-    output_id = pygame.midi.get_default_output_id()
-    return pygame.midi.Output(output_id)
+    outport = mido.open_output('IAC Driver')  # 仮想MIDIデバイスのIDを指定
+    return outport
 
 # キーを表すクラス
 class Key:
@@ -20,52 +19,30 @@ class Key:
         self.is_pressed = False
         self.is_black = is_black
         self.velocity = velocity
-        self.release_time = None
-        self.release_duration = 0.5  # 0.5秒でフェードアウト
 
     def draw(self, screen):
-        if self.is_pressed:
-            color = self.pressed_color
-        elif self.release_time is not None:
-            t = min(1, (time.time() - self.release_time) / self.release_duration)
-            r = int(self.pressed_color[0] + (self.base_color[0] - self.pressed_color[0]) * t)
-            g = int(self.pressed_color[1] + (self.base_color[1] - self.pressed_color[1]) * t)
-            b = int(self.pressed_color[2] + (self.base_color[2] - self.pressed_color[2]) * t)
-            color = (r, g, b)
-        else:
-            color = self.base_color
-
+        color = self.pressed_color if self.is_pressed else self.base_color
         pygame.draw.rect(screen, color, self.rect)
         if not self.is_black:
             pygame.draw.rect(screen, (0, 0, 0), self.rect, 1)
 
     def press(self, midiout):
         if not self.is_pressed:
-            midiout.write_short(0x90, self.note, self.velocity)
+            midiout.send(mido.Message('note_on', note=self.note, velocity=self.velocity))
             self.is_pressed = True
-            self.release_time = None
             print(f"Key {self.note} pressed.")
 
     def release(self, midiout):
         if self.is_pressed:
-            midiout.write_short(0x80, self.note, 0)
+            midiout.send(mido.Message('note_off', note=self.note, velocity=0))
             self.is_pressed = False
-            self.release_time = time.time()
             print(f"Key {self.note} released.")
-
-    def update(self, midiout):
-        if not self.is_pressed and self.release_time is not None:
-            t = (time.time() - self.release_time) / self.release_duration
-            if t >= 1:
-                midiout.write_short(0x80, self.note, 0)
-                self.release_time = None
-                print(f"Key {self.note} fade-out completed.")
 
 # ピアノの鍵盤を設定
 def create_piano_keys():
     keys = []
-    white_key_notes = [60, 62, 64, 65, 67, 69, 71]
-    black_key_notes = [61, 63, 66, 68, 70]
+    white_key_notes = [60, 62, 64, 65, 67, 69, 71]  # C4 (60) からの白鍵
+    black_key_notes = [61, 63, 66, 68, 70]  # 黒鍵
 
     key_width = 40
     key_height = 200
@@ -91,7 +68,7 @@ def create_piano_keys():
         key = Key(note, rect, (0, 0, 0), is_black=True)
         keys.append(key)
 
-    keys.sort(key=lambda k: k.is_black)
+    keys.sort(key=lambda k: k.is_black)  # 黒鍵を先に描画
     return keys
 
 # メインのGUI関数
@@ -103,7 +80,6 @@ def piano_gui():
     midiout = init_midi()
     keys = create_piano_keys()
     running = True
-
     clock = pygame.time.Clock()
 
     while running:
@@ -128,29 +104,13 @@ def piano_gui():
                         if key.is_pressed and key.rect.collidepoint(mouse_pos):
                             key.release(midiout)
 
-            elif event.type == pygame.MOUSEMOTION:
-                if event.buttons[0]:  # Left mouse button is held down
-                    mouse_pos = event.pos
-                    for key in reversed(keys):
-                        if key.rect.collidepoint(mouse_pos):
-                            if not key.is_pressed:
-                                key.press(midiout)
-                        elif key.is_pressed:
-                            key.release(midiout)
-
         for key in keys:
-            key.update(midiout)
             key.draw(screen)
 
         pygame.display.update()
-        clock.tick(60)  # Limit the frame rate to 60 FPS
-
-    # すべての音を停止
-    for key in keys:
-        midiout.write_short(0x80, key.note, 0)
+        clock.tick(60)
 
     midiout.close()
-    pygame.midi.quit()
     pygame.quit()
 
 if __name__ == "__main__":
