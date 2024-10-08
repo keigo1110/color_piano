@@ -137,6 +137,9 @@ def handle_palette_click(pos):
             return key
     return None
 
+# 列の再生
+playing_notes = [None for _ in range(rows)]  # To store the currently playing note for each row
+
 # Play column
 def play_column(col):
     for row in range(rows):
@@ -164,6 +167,29 @@ def play_column(col):
             if playing_notes[row]:
                 outport.send(mido.Message('note_off', note=playing_notes[row], velocity=100))
                 playing_notes[row] = None  # Reset the playing note
+
+# 再生バーの描画
+def draw_playback_bar(position):
+    bar_color = (255, 255, 0, 128)  # 半透明の黄色
+    pygame.draw.rect(screen, bar_color, (position * canvas_width, 0, cell_width, canvas_height))
+
+# グリッドのリセット
+def clear_grid():
+    global grid
+    grid = [[None for _ in range(cols)] for _ in range(rows)]
+
+# 音の再生処理
+def play_sounds(progress):
+    column = int(progress * cols)
+
+    # If at the start, reset any sustained notes
+    if column == 0:
+        for row in range(rows):
+            if playing_notes[row]:
+                outport.send(mido.Message('note_off', note=playing_notes[row], velocity=100))
+                playing_notes[row] = None  # Reset all playing notes
+
+    play_column(column)
 
 # Main loop
 running = True
