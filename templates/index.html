@@ -1,28 +1,100 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>カラーグリッド音楽ジェネレーター</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Music Grid</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .palette, .grid {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .palette button, .grid button {
+            width: 50px;
+            height: 50px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+        .grid {
+            flex-wrap: wrap;
+            width: 640px;
+        }
+        .play-bar {
+            width: 640px;
+            height: 10px;
+            background-color: yellow;
+        }
+    </style>
 </head>
 <body>
-    <h1>カラーグリッド音楽ジェネレーター</h1>
-    <canvas id="gridCanvas" width="1000" height="240"></canvas>
 
-    <div id="controls">
-        <div id="paletteContainer">
-            <div id="mainPalette"></div>
-            <div id="drumPalette"></div>
-        </div>
-        <button id="eraserButton">消しゴム</button>
-        <button id="clearButton">クリア</button>
-        <button id="saveButton">保存</button>
-        <button id="playButton">再生 / 停止</button>
-    </div>
+<h1>Interactive Music Grid</h1>
 
-    <!-- Tone.jsのCDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.39/Tone.js"></script>
-    <!-- スクリプトファイル -->
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<!-- カラーパレット -->
+<div class="palette">
+    <button style="background-color: red;" data-color="Red"></button>
+    <button style="background-color: #FF9966;" data-color="Orange-pink"></button>
+    <button style="background-color: yellow;" data-color="Yellow"></button>
+    <button style="background-color: green;" data-color="Green"></button>
+    <button style="background-color: #E0FFFF;" data-color="Whitish-blue"></button>
+    <button style="background-color: blue;" data-color="Blue, bright"></button>
+    <button style="background-color: violet;" data-color="Violet"></button>
+    <button style="background-color: indigo;" data-color="Purplish-violet"></button>
+    <button style="background-color: steelblue;" data-color="Steel color with metallic sheen"></button>
+    <button style="background-color: darkred;" data-color="Red, dark"></button>
+</div>
+
+<!-- グリッド -->
+<div class="grid">
+    <!-- 64個のグリッドセルを自動生成 -->
+    <script>
+        for (let i = 0; i < 64; i++) {
+            document.write('<button class="grid-cell"></button>');
+        }
+    </script>
+</div>
+
+<!-- 再生バー -->
+<div class="play-bar"></div>
+
+<script>
+    let selectedColor = 'Red';
+
+    // カラーパレットの色を選択
+    document.querySelectorAll('.palette button').forEach(button => {
+        button.addEventListener('click', function() {
+            selectedColor = this.getAttribute('data-color');
+        });
+    });
+
+    // グリッドセルをクリックしたとき
+    document.querySelectorAll('.grid-cell').forEach((cell, index) => {
+        cell.addEventListener('click', function() {
+            this.style.backgroundColor = selectedColor;
+
+            // バックエンドにノートを送信
+            fetch('/play_note', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    color: selectedColor,
+                    type: index < 48 ? 'note' : 'drum'  // 前48個は音符、最後の16個はドラム
+                }),
+            })
+            .then(response => response.json())
+            .then(data => console.log(data));
+        });
+    });
+</script>
+
 </body>
 </html>

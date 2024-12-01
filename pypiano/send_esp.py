@@ -74,7 +74,9 @@ is_erasing = False
 outport = mido.open_output('IAC Driver My Port1')
 
 # Window setup
-screen = pygame.display.set_mode((canvas_width, canvas_height + 100))  # Extended height for palette
+screen = pygame.display.set_mode((canvas_width +800, canvas_height + 800))  # Extended height for palette
+# screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+
 pygame.display.set_caption("Interactive Music Grid")
 
 # Draw color palette
